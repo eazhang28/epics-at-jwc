@@ -1,8 +1,11 @@
 #include "sqlut.hpp"
+#include <map>
 #include <memory>
+#include <regex>
+#include <set>
 #include <string>
-
 extern "C" {
+#include <parser.h>
 #include <sqlite3.h>
 }
 
@@ -14,8 +17,10 @@ int get_data_callback(void *dataret, int count, char **data, char **columns) {
   return 0;
 }
 
-int get_chars(struct sqlite3 *db_handle, std::unique_ptr<std::string> &data,
-              char ch) {
+SQLUT::SQLUT(std::string &input) { populateTokenMap(input); }
+
+int SQLUT::get_chars(struct sqlite3 *db_handle,
+                     std::unique_ptr<std::string> &data, char ch) {
 
   data = std::make_unique<std::string>();
   void *data_handle = static_cast<void *>(data.get());
@@ -23,8 +28,8 @@ int get_chars(struct sqlite3 *db_handle, std::unique_ptr<std::string> &data,
   std::string handle;
 
   char query[50];
-  snprintf(query, sizeof(query), "SELECT data FROM FCLOOKUP WHERE char == '%c'",
-           ch);
+  snprintf(query, sizeof(query), "SELECT data FROM FCLOOKUP_NEW WHERE id == %d",
+           int(ch));
   int return_status = sqlite3_exec(db_handle, query, get_data_callback,
                                    data_handle, &errmsg_cstr);
   if (return_status != SQLITE_OK) {
@@ -33,3 +38,25 @@ int get_chars(struct sqlite3 *db_handle, std::unique_ptr<std::string> &data,
 
   return return_status;
 }
+
+void SQLUT::populateTokenMap(std::string &input) {
+  tokenMap.clear();
+  std::map<int, std::string> bum;
+
+  input.erase(std::remove_if(input.begin(), input.end(), ::isspace),
+              input.end());
+  std::set<char> chtokens(input.begin(), input.end());
+
+  struct sqlite3 *db_handle;
+  std::unique_ptr<std::string> data;
+  sqlite3_open("fontdch.db", &db_handle);
+
+  for (char chtok : chtokens) {
+    get_chars(db_handle, data, chtok);
+    tokenMap[int(chtok)] = *data;
+  }
+
+  sqlite3_close(db_handle);
+}
+
+std::map<int, std::string> SQLUT::getMap() { return tokenMap; }

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login — Jackson Writing Center</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="centered">
+  <div class="card">
+    <h1>Sign in / Register</h1>
+
+    <div class="form-row">
+      <label for="username">Username</label>
+      <input id="username" type="text" placeholder="username" />
+    </div>
+
+    <div class="form-row">
+      <label for="password">Password</label>
+      <input id="password" type="password" placeholder="password" />
+    </div>
+
+    <div class="form-actions">
+      <button id="loginBtn" class="button">Login</button>
+      <button id="registerBtn" class="button ghost">Register</button>
+    </div>
+
+    <p id="message" class="muted"></p>
+
+    <p class="muted" style="margin-top:12px;">Back to <a href="index.html">Home</a></p>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>
+    document.getElementById('loginBtn').addEventListener('click', loginUser);
+    document.getElementById('registerBtn').addEventListener('click', registerUser);
+  </script>
+</body>
+</html>

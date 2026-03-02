@@ -8,3 +8,6 @@
 [submodule "firmware"]
 	path = firmware
 	url = ./firmware
+[submodule "apps/JWC-Website"]
+	path = apps/JWC-Website
+	url = https://github.com/alicialiu021/JWC-Website

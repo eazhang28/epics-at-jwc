@@ -2,23 +2,18 @@
 #define MAIN
 #include "main.hpp"
 #include "parse.hpp"
+#include "sequencer.hpp"
 #include "sqlut.hpp"
-#include <memory>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
 extern "C" {
-#include "parser.h"
 #include <sqlite3.h>
-#include <string.h>
 }
 #include "Eigen/Dense"
 #include <iostream>
 #include <math.h>
 #include <string>
 
-int main(void) {
+int main(int argc, char *argv[]) {
 
   // this program is ran from the daemon state machine
   // receives input ./runtime_engine <string_input> <config file (in root)>
@@ -29,39 +24,21 @@ int main(void) {
   // sequence characters to match input order (delete from cache when no longer
   // needed) stream send gcode orders confirm end
 
-  std::unordered_map<char, uint> map;
+  if (argc == 2) {
+    std::string input = argv[1];
+    Sequencer seq(input, SQLUT(input).getMap());
+    // seq.loadintobuffer()
 
-  std::string input = "HIALL";
+    std::map<int, std::string> res1 = seq.getLUT();
 
-  for (char c : input) {
-    map[c]++;
+    for (const auto &pair : res1) {
+      std::cout << char(pair.first) << '\n' << pair.second << std::endl;
+    }
+    for (const auto &pair : res1) {
+      Token tkn(pair.second);
+      std::cout << tkn.getMat() << std::endl;
+    }
   }
-
-  std::vector<struct gcoord> arr;
-
-  parser_t parser;
-  parser_init(&parser);
-  struct sqlite3 *db_handle;
-  std::unique_ptr<std::string> data;
-  sqlite3_open("fontdch.db", &db_handle);
-  for (uint i = 0; i < input.length(); i++) {
-    struct gcoord token;
-    char chr = input[i];
-    map[chr]--;
-    get_chars(db_handle, data, chr);
-    parser_read_gcode_text(&parser, data->c_str());
-    Eigen::MatrixXd mat = gcode_to_matrix(parser, *data);
-    token.matrix = mat;
-    std::cout << token.matrix << std::endl;
-    arr.push_back(token);
-  }
-
-  for (const auto &crd : arr) {
-    std::cout << crd.matrix << std::endl;
-  }
-
-  sqlite3_close(db_handle);
-  parser_free(&parser);
   return 0;
 }
 #endif
