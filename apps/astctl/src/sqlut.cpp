@@ -1,7 +1,7 @@
 #include "sqlut.hpp"
+#include <algorithm>
 #include <map>
 #include <memory>
-#include <regex>
 #include <set>
 #include <string>
 extern "C" {

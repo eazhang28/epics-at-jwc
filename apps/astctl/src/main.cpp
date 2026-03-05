@@ -1,9 +1,9 @@
 #ifndef MAIN
 #define MAIN
 #include "main.hpp"
-#include "parse.hpp"
 #include "sequencer.hpp"
 #include "sqlut.hpp"
+#include "tokenizer.hpp"
 
 extern "C" {
 #include <sqlite3.h>
@@ -26,17 +26,18 @@ int main(int argc, char *argv[]) {
 
   if (argc == 2) {
     std::string input = argv[1];
-    Sequencer seq(input, SQLUT(input).getMap());
-    // seq.loadintobuffer()
-
-    std::map<int, std::string> res1 = seq.getLUT();
-
-    for (const auto &pair : res1) {
-      std::cout << char(pair.first) << '\n' << pair.second << std::endl;
-    }
-    for (const auto &pair : res1) {
-      Token tkn(pair.second);
-      std::cout << tkn.getMat() << std::endl;
+    Sequencer seq(input, SQLUT(input).getMap(), 5, 6, 7, 8);
+    // std::map<int, std::string> res1 = seq.getLUT();
+    //
+    // for (const auto &pair : res1) {
+    //   std::cout << char(pair.first) << '\n' << pair.second << std::endl;
+    // }
+    // for (const auto &pair : res1) {
+    //   Token tkn(pair.second);
+    //   std::cout << tkn.getMat() << std::endl;
+    // }
+    for (const auto &c : input) {
+      std::cout << seq.Step() << std::endl;
     }
   }
   return 0;

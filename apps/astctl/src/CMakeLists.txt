@@ -3,7 +3,7 @@ project(jwc_embedded)
 
 add_executable(jwc_embedded
   main.cpp
-  parse.cpp
+  tokenizer.cpp
   driver.cpp
   sqlut.cpp
   sequencer.cpp
