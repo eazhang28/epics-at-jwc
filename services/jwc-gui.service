@@ -1,0 +1,15 @@
+[Unit]
+Description=JWC GUI and Browser
+After=jwc-init.service
+
+[Service]
+WorkingDirectory=/home/pi/your_project
+Environment=DISPLAY=:0
+# This starts the python app and the browser together
+ExecStart=/bin/bash -c "python3 ./apps/jwc-gui/main.py & midori http://127.0.0.1:5041"
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+

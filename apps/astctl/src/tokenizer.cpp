@@ -1,6 +1,5 @@
 #include "tokenizer.hpp"
 #include "Eigen/Dense"
-#include "parser.h"
 #include <cstdio>
 #include <cstring>
 #include <iomanip>
@@ -8,7 +7,12 @@
 #include <sstream>
 #include <string>
 
-Token::Token(std::string data) {
+extern "C" {
+#include "parser.h"
+}
+
+Token::Token(char ch, std::string data) {
+  this->ch = ch;
   this->gcode = data;
   this->matrix = gcode_to_matrix();
 }
@@ -74,18 +78,11 @@ std::string Token::getGCode() { return gcode; }
 
 Eigen::MatrixXd Token::operator+(float value[]) {
   Eigen::MatrixXd mat = this->matrix;
-  mat = mat.array() + value[0];
-  mat = mat.array() + value[1];
+  mat.col(0) = mat.col(0).array() + value[0];
+  mat.col(1) = mat.col(1).array() + value[1];
   return mat;
 }
 
 Eigen::MatrixXd Token::operator*(float value) { return this->matrix * value; }
 
-// int com_glyph(struct gcom_t com, char *glyph) {
-//   int ret = 1;
-//   if (!com.instr_p && com.edit) {
-//     snprintf(glyph, BUF_LEN_MAX, "G%d X%f Y%f\n", int(com.instr_s),
-//              float(com.x), float(com.y));
-//   }
-//   return ret;
-// }
+void Token::setGcode(std::string gc) { gcode = gc; }

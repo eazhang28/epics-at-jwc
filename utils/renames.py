@@ -45,5 +45,5 @@ def rename_files_to_ascii(directory_path='.'):
 if __name__ == "__main__":
     # Specify the directory path where your files are located
     # Replace '.' with your specific path, e.g., 'C:\\Users\\YourName\\Desktop\\MyFiles'
-    rename_files_to_ascii("./apps/astctl/assets/fonts/default/")
+    rename_files_to_ascii("./apps/astctl/assets/fonts/default/Lower_case")
 

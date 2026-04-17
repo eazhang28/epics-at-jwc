@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="/static/images/logo.png" />
+  <title>Write — Jackson Writing Center</title>
+  <link rel="stylesheet" href="/static/css/pagestyle.css">
+</head>
+<body>
+
+  <nav>
+    <div class="brand">
+      <img src="/static/images/logo.png" alt="Jackson Writing Center Logo" height="20" style="vertical-align: middle"/>
+      <strong>Jackson Writing Center</strong>
+    </div>
+    <div>
+      <a href="/">Home</a>
+      <a href="/write">Write</a>
+      <a href="/about">About Us</a>
+      <a id="authLink" href="/login">Login</a>
+    </div>
+  </nav>
+
+  <section id="write" class="page active">
+
+    <div class="step-bar">
+      <span class="step active">Write</span> ▸
+      <span class="step" onclick="window.location='/confirm'" style="cursor:pointer;">Confirmation</span>
+    </div>
+
+    <h1>Write</h1>
+    <p>Your message will be sent to the drawing machine after confirmation.</p>
+
+    <div class="two-column">
+      <div>
+        <h2>Type your message below</h2>
+        <textarea id="messageInput" placeholder="Type what you want the drawbot to write..."></textarea>
+        <div class="button" onclick="goToConfirm()">Continue</div>
+      </div>
+    </div>
+
+  </section>
+
+  <footer>
+    © 2026 Jackson Writing Center
+  </footer>
+
+  <script src="/static/js/script.js"></script>
+  <script>
+    if (!sessionStorage.getItem('jwc_session')) {
+      location.href = '/login';
+    }
+    const draft = sessionStorage.getItem('jwc_pending_message');
+  if (draft) {
+    document.getElementById('messageInput').value = draft;
+  }
+  </script>
+</body>
+</html>

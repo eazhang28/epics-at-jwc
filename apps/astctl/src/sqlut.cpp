@@ -27,8 +27,9 @@ int SQLUT::get_chars(struct sqlite3 *db_handle,
   char *errmsg_cstr = nullptr;
   std::string handle;
 
-  char query[50];
-  snprintf(query, sizeof(query), "SELECT data FROM FCLOOKUP_NEW WHERE id == %d",
+  char query[100];
+  snprintf(query, sizeof(query),
+           "SELECT data FROM FCLOOKUP_NEW WHERE font == 'default' AND id == %d",
            int(ch));
   int return_status = sqlite3_exec(db_handle, query, get_data_callback,
                                    data_handle, &errmsg_cstr);
@@ -43,13 +44,16 @@ void SQLUT::populateTokenMap(std::string &input) {
   tokenMap.clear();
   std::map<int, std::string> bum;
 
-  input.erase(std::remove_if(input.begin(), input.end(), ::isspace),
-              input.end());
-  std::set<char> chtokens(input.begin(), input.end());
+  std::string input_copy = input;
+  input_copy.erase(
+      std::remove_if(input_copy.begin(), input_copy.end(), ::isspace),
+      input_copy.end());
+
+  std::set<char> chtokens(input_copy.begin(), input_copy.end());
 
   struct sqlite3 *db_handle;
   std::unique_ptr<std::string> data;
-  sqlite3_open("fontdch.db", &db_handle);
+  sqlite3_open("assets/fontdch.db", &db_handle);
 
   for (char chtok : chtokens) {
     get_chars(db_handle, data, chtok);

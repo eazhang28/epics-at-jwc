@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}" />
+  <title>Confirmation — Jackson Writing Center</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/pagestyle.css') }}">
+</head>
+<body>
+
+  <nav>
+    <div class="brand">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Jackson Writing Center Logo" height="20" style="vertical-align: middle"/>
+      <strong>Jackson Writing Center</strong>
+    </div>
+    <div>
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('write') }}">Write</a>
+      <a href="{{ url_for('about') }}">About Us</a>
+      <a id="authLink" href="{{ url_for('login') }}">Login</a>
+    </div>
+  </nav>
+
+  <section id="confirm" class="page active">
+
+    <div class="step-bar">
+      <span class="step" onclick="window.location='{{ url_for('write') }}'" style="cursor:pointer;">Write</span> ▸
+      <span class="step active">Confirmation</span>
+    </div>
+
+    <h1>Confirmation</h1>
+    <p>Is this the message you wish to write?</p>
+
+    <div style="border:1px solid #ccc; padding:20px; border-radius:6px; min-height:100px;" id="previewBox"></div>
+
+    <div style="margin-top:30px;">
+      <div class="button" onclick="window.location='{{ url_for('write') }}'">Back</div>
+      <div class="button" style="margin-left:10px;" onclick="sendToArduino()">Confirm & Send</div>
+    </div>
+
+    <p id="status" style="margin-top:20px;"></p>
+  </section>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+  if (!sessionStorage.getItem('jwc_session')) {
+    location.href = "{{ url_for('login') }}";
+  }
+
+  const saved = sessionStorage.getItem('jwc_pending_message');
+  if (!saved) {
+    location.href = "{{ url_for('write') }}";
+  } else {
+    currentMessage = saved;
+    document.getElementById('previewBox').innerText = saved;
+  }
+</script>
+</body>
+</html>
+
