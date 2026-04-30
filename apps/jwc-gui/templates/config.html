@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="/static/images/logo.png" />
+  <title>Sequencer Config — Jackson Writing Center</title>
+  <link rel="stylesheet" href="/static/css/pagestyle.css">
+  <style>
+    /* ── Config-page extras ── */
+    .config-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px 40px;
+      margin-top: 28px;
+    }
+
+    .config-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .config-field label {
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      color: #555;
+      text-transform: uppercase;
+    }
+
+    .config-field input {
+      padding: 10px 14px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    .config-field input:focus {
+      border-color: #333;
+      box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .config-actions {
+      margin-top: 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    #statusMsg {
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    #statusMsg.show {
+      opacity: 1;
+    }
+
+    #statusMsg.ok {
+      color: #1a7a4a;
+    }
+
+    #statusMsg.err {
+      color: #c0392b;
+    }
+
+    .section-label {
+      display: inline-block;
+      background: #222;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <div class="brand">
+      <img src="/static/images/logo.png" alt="Jackson Writing Center Logo" height="20" style="vertical-align: middle" />
+      <strong>Jackson Writing Center</strong>
+    </div>
+    <div>
+      <a href="/">Home</a>
+      <a href="/write">Write</a>
+      <a href="/about">About Us</a>
+      <a href="/config" style="font-weight:800; text-decoration:underline; text-underline-offset:4px;">Config</a>
+      <a id="authLink" href="/login">Login</a>
+    </div>
+  </nav>
+
+  <section id="config-page" class="page active">
+    <span class="section-label">SEQUENCERCONFIG</span>
+    <h1>Sequencer Config</h1>
+    <p>Edit the parameters stored in <code>jwc_seq_config.ini</code>. Changes are saved directly to disk.</p>
+
+    <form id="configForm">
+      <div class="config-grid" id="configGrid">
+        <!-- Fields injected by JS from /api/config GET -->
+      </div>
+
+      <div class="config-actions">
+        <div class="button" onclick="saveConfig()">Save Changes</div>
+        <div class="button" id="reloadBtn" style="background:#f5f5f5;color:#222;border:1px solid #ccc;"
+          onclick="loadConfig()">↺ Reload</div>
+        <span id="statusMsg"></span>
+      </div>
+    </form>
+  </section>
+
+  <footer>
+    © 2026 Jackson Writing Center
+  </footer>
+
+  <script>
+    /* ── Highlight active nav link ── */
+    document.querySelectorAll('nav a').forEach(a => {
+      if (a.href === window.location.href) a.style.fontWeight = '800';
+    });
+
+    /* ── Load config from server ── */
+    async function loadConfig() {
+      try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        if (!res.ok) { showStatus(data.error || 'Failed to load config', false); return; }
+
+        const grid = document.getElementById('configGrid');
+        grid.innerHTML = '';
+
+        for (const [key, value] of Object.entries(data)) {
+          const field = document.createElement('div');
+          field.className = 'config-field';
+          field.innerHTML = `
+            <label for="cfg_${key}">${key}</label>
+            <input id="cfg_${key}" name="${key}" type="text" value="${value}" autocomplete="off" />
+          `;
+          grid.appendChild(field);
+        }
+      } catch (e) {
+        showStatus('Network error loading config', false);
+      }
+    }
+
+    /* ── Save config to server ── */
+    async function saveConfig() {
+      const inputs = document.querySelectorAll('#configGrid input');
+      const payload = {};
+      inputs.forEach(inp => { payload[inp.name] = inp.value; });
+
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showStatus('Config saved successfully', true);
+        } else {
+          showStatus(data.error || 'Save failed', false);
+        }
+      } catch (e) {
+        showStatus('Network error saving config', false);
+      }
+    }
+
+    function showStatus(msg, ok) {
+      const el = document.getElementById('statusMsg');
+      el.textContent = msg;
+      el.className = 'show ' + (ok ? 'ok' : 'err');
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => { el.className = ''; }, 4000);
+    }
+
+    loadConfig();
+  </script>
+</body>
+
+</html>

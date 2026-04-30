@@ -20,5 +20,6 @@ target_link_libraries(jwc_embedded PRIVATE
   gtu-code-mod
   eigen
   sqlite3
+  INIReader
 )
 

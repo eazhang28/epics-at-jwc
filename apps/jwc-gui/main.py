@@ -2,10 +2,12 @@ from flask import Flask, request, render_template, jsonify
 import os
 import sqlite3
 import shlex
+import configparser
 from werkzeug.security import generate_password_hash, check_password_hash
 from waitress import serve
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(BASE_DIR, '..', '..', 'jwc_seq_config.ini')
 template_dir = os.path.join(BASE_DIR, 'templates')
 app = Flask(__name__, template_folder=template_dir)
 
@@ -49,6 +51,38 @@ def confirm():
 @app.route("/dashboard")
 def dashboard():
     return (render_template('dashboard.html'))
+
+@app.route("/config")
+def config_page():
+    return render_template('config.html')
+
+@app.route("/api/config", methods=['GET'])
+def config_get():
+    cfg = configparser.ConfigParser()
+    cfg.read(CONFIG_PATH)
+    section = 'SEQUENCERCONFIG'
+    if not cfg.has_section(section):
+        return jsonify({'error': f'Section [{section}] not found in config file'}), 404
+    return jsonify(dict(cfg[section]))
+
+@app.route("/api/config", methods=['POST'])
+def config_post():
+    data = request.json
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+    cfg = configparser.ConfigParser()
+    cfg.read(CONFIG_PATH)
+    section = 'SEQUENCERCONFIG'
+    if not cfg.has_section(section):
+        cfg.add_section(section)
+    for key, value in data.items():
+        cfg.set(section, key.upper(), str(value))
+    try:
+        with open(CONFIG_PATH, 'w') as f:
+            cfg.write(f)
+    except OSError as e:
+        return jsonify({'error': str(e)}), 500
+    return jsonify({'status': 'saved'})
 
 @app.route("/api/register", methods=['POST'])
 def register_user():
