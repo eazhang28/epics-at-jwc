@@ -3,7 +3,6 @@
 
 enum State { IDLE, PROCESSING, EMERGENCY_STOP };
 
-#include "driver.hpp"
 #include "sequencer.hpp"
 #include "sqlut.hpp"
 #include "tokenizer.hpp"
