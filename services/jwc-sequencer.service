@@ -1,0 +1,14 @@
+[Unit]
+Description=JWC Sequencer
+After=jwc-init.service
+Requires=jwc-init.service
+
+[Service]
+WorkingDirectory=/home/pi/your_project
+ExecStart=/home/pi/your_project/build/jwc_embedded
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,0 +1,13 @@
+[Unit]
+Description=JWC Serial Script
+After=jwc-init.service
+
+[Service]
+WorkingDirectory=/home/pi/your_project
+ExecStart=/usr/bin/python3 ./apps/astctl/scripts/seq2ard.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+

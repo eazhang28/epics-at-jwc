@@ -1,62 +1,123 @@
-extern "C" {
-#include "cstdio"
-#include "parser.h"
-}
+/**
+ * @file main.cpp
+ * @brief G-code translation and sequencing for named pipe input.
+ *
+ * Developed for Jackson Center for Conductive Education
+ * Copyright (C) 2024 Jackson Center for Conductive Education
+ * Licensed under the GNU General Public License v3.0 (GPL-3.0-or-later).
+ *
+ * This program runs as a systemd service. It reads input from a named pipe,
+ * transforms it into machine-specific G-code using an SQLite-based LUT,
+ * and handles machine safety bounds and state management.
+ *
+ * @author eazhang28
+ * @version 1.0.0
+ * @date 2026-04-28
+ */
+
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
+#ifndef MAIN_CPP // Usually unique to the filename
+#define MAIN_CPP
+
+#include "main.hpp"
 #include "Eigen/Dense"
+#include <INIReader.h>
+#include <chrono>
+#include <cstdio>
+#include <fstream>
 #include <iostream>
-#include <math.h>
-#include <sqlite3.h>
 #include <string>
-#include <vector>
-
-static int special_callback(void *dataret, int count, char **data,
-                            char **columns);
-
-static int special_callback(void *dataret, int count, char **data,
-                            char **columns) {
-  std::string &d = *static_cast<std::string *>(dataret);
-  d.append(data[0]);
-  return 0;
+extern "C" {
+#include <sqlite3.h>
 }
 
-int main(void) {
-  struct sqlite3 *db_handle;
-  sqlite3_open("fontdch.db", &db_handle);
+/**
+ * @brief Tracks the current operational status of the machine.
+ */
+State currentState = IDLE;
 
-  char query[100] = "SELECT * FROM FCLOOKUP";
-  std::string errmsg(1000, '\0');
-  char *errmsg_cstr = &errmsg[0];
-  std::string clock;
-  void *data_handle = static_cast<void *>(&clock);
-  sqlite3_exec(db_handle, "SELECT data FROM FCLOOKUP WHERE char == 'C'",
-               special_callback, data_handle, &errmsg_cstr);
-  std::string &d = *static_cast<std::string *>(data_handle);
-  // std::cout << d << std::endl;
-  //  std::string &data = *static_cast<std::string *>(data_handle);
-  sqlite3_close(db_handle);
+/**
+ * @brief Entry point for the pipe listener and G-code sequencer.
+ * @param argc Argument count.
+ * @param argv Argument vector.
+ * @return int Execution status code.
+ */
+int main(int argc, char *argv[]) {
+  std::string receive;
+  std::ifstream fifo(
+      "/tmp/input_pipe"); // Open named pipe for reading from frontend
+  freopen("/tmp/output_pipe", "w", stdout); // Redirect stdout to output pipe
+  std::ofstream logFile("./jwc_seq.log", std::ios::app);
 
-  parser_t parser;
-  parser_init(&parser);
-  parser_read_gcode_text(&parser, d.c_str());
-  gcode_points_t *point = parser.gcode;
-  std::vector<float> vector;
+  INIReader reader("./jwc_seq_config.ini");
+  float HOFFSET = reader.GetReal("SEQUENCERCONFIG", "VOFFSET", 1);
+  float VOFFSET = reader.GetReal("SEQUENCERCONFIG", "HOFFSET", 1);
+  float SCALE = reader.GetReal("SEQUENCERCONFIG", "SCALE", 1);
+  float SPACING = reader.GetReal("SEQUENCERCONFIG", "SPACING", 2);
+  float MAXHLEN = reader.GetReal("SEQUENCERCONFIG", "MAXHLEN", 65);
+  float MAXVLEN = reader.GetReal("SEQUENCERCONFIG", "MAXVLEN", 80);
+  float ROTANGLE = reader.GetReal("SEQUENCERCONFIG", "ROTANGLE", 90);
 
-  int dim = 0;
-  gcode_points_t *temp = parser.gcode;
-  do {
-    dim++;
-  } while ((temp = (gcode_points_t *)temp->next) != NULL);
+  logFile << "HOFFSET: " << HOFFSET << ", VOFFSET: " << VOFFSET
+          << ", SCALE: " << SCALE << ", SPACING: " << SPACING
+          << ", MAXHLEN: " << MAXHLEN << ", MAXVLEN: " << MAXVLEN
+          << ", ROTANGLE: " << ROTANGLE << std::endl;
 
-  int i = 0;
-  Eigen::MatrixXd m(dim, 2);
-  do {
-    m(i, 0) = point->ideal.x;
-    m(i, 1) = point->ideal.y;
-    i++;
-  } while ((point = (gcode_points_t *)point->next) != NULL);
+  while (true) {
+    switch (currentState) {
+    case State::IDLE: {
+      if (std::getline(fifo, receive)) {
+        currentState = State::PROCESSING;
+      } else if (fifo.eof()) {
+        fifo.clear(); // Reset EOF to allow further reading from pipe
+      }
+    } break;
 
-  std::cout << m.array() * 200 << std::endl;
+    case State::PROCESSING: {
+      // Initialize sequencer with LUT data and coordinate bounds
+      Sequencer seq(receive, SQLUT(receive).getMap(), HOFFSET, VOFFSET, SCALE,
+                    SPACING, MAXHLEN, MAXVLEN, ROTANGLE);
 
-  parser_free(&parser);
+      std::chrono::steady_clock::time_point start =
+          std::chrono::steady_clock::now();
+      for (const auto &c : receive) {
+        // Step then check if bounds has exceeded.
+        if (!seq.Step()) {
+          std::cout << "M5" << std::endl; // Safety stop: bounds exceeded
+          logFile << "Current Input Has Exceeded Bounds! " << std::endl;
+          break;
+        }
+        // After a step is processed, check if we've exceeded the stall
+        // threshold
+        if ((std::chrono::steady_clock::now() - start).count() > 3) {
+          logFile << "Exceeded Stall Threshold! Emergency Stop Engaged."
+                  << std::endl;
+          currentState = State::EMERGENCY_STOP;
+          continue;
+        }
+        if (!seq.send_buffer.empty()) {
+          std::cout << seq.send_buffer.front().getGCode() << std::endl;
+          seq.send_buffer.pop();
+          std::cout << "M5" << std::endl; // Stop spindle/tool between steps
+        }
+      }
+      std::chrono::steady_clock::time_point end =
+          std::chrono::steady_clock::now();
+      std::chrono::duration<double> elapsed_seconds = end - start;
+      logFile << "Processing Time: " << elapsed_seconds.count()
+              << "s for input: " << receive << std::endl;
+      std::cout << "G28" << std::endl; // Auto-home after processing
+      currentState = State::IDLE;
+      break;
+    }
+    case State::EMERGENCY_STOP: {
+      // TODO: Monitor GPIO Pin XX for reset signal
+      // TODO: Send kill signal to serial script
+      return 0;
+    }
+    }
+  }
   return 0;
 }
+#endif

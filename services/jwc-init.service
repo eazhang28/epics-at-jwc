@@ -1,0 +1,13 @@
+[Unit]
+Description=Initialize JWC Pipes
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/rm -f /tmp/input_pipe /tmp/output_pipe
+ExecStart=/usr/bin/mkfifo /tmp/input_pipe
+ExecStart=/usr/bin/mkfifo /tmp/output_pipe
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+

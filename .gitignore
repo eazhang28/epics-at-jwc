@@ -1,3 +1,6 @@
 build
 temp
 libgpl_library.a
+CMakeFiles/
+.clangd
+

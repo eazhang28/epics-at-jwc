@@ -1,2 +1,0 @@
-/usr/bin/ar qc libgpl_library.a CMakeFiles/gpl_library.dir/include/grblparse/src/GrblParserC.c.o CMakeFiles/gpl_library.dir/include/grblparse/src/alarm.c.o CMakeFiles/gpl_library.dir/include/grblparse/src/e4math.c.o CMakeFiles/gpl_library.dir/include/grblparse/src/error.c.o
-/usr/bin/ranlib libgpl_library.a

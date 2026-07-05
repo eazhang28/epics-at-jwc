@@ -1,2 +1,8 @@
 CompileFlags:
-  CompilationDatabase: "build"
+  CompilationDatabase: .
+  Add:
+    - "-xc++-header"
+  Compiler: /usr/bin/g++
+
+Index:
+  Background: Build

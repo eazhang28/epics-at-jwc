@@ -5,3 +5,12 @@
 [submodule "external/eigen"]
 	path = external/eigen
 	url = https://gitlab.com/libeigen/eigen.git
+[submodule "firmware"]
+	path = firmware
+	url = ./firmware
+[submodule "apps/JWC-Website"]
+	path = apps/JWC-Website
+	url = https://github.com/alicialiu021/JWC-Website
+[submodule "apps/gui/JWC-Website"]
+	path = apps/gui/JWC-Website
+	url = https://github.com/alicialiu021/JWC-Website

@@ -1,3 +1,0 @@
-/home/ez8/Projects/jwc-epics/CMakeFiles/gpl_library.dir
-/home/ez8/Projects/jwc-epics/CMakeFiles/edit_cache.dir
-/home/ez8/Projects/jwc-epics/CMakeFiles/rebuild_cache.dir
